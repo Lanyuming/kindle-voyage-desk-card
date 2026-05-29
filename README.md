@@ -349,7 +349,21 @@ def get_hitokoto():
 
 ---
 
+<div align="center">
+
+### 📖 [Switch to English Version](#english) | [切换到英文版本](#english)
+
+</div>
+
+---
+
 ## English
+
+<div align="right">
+
+**[中文](#中文) | [English](#english)**
+
+</div>
 
 Turn your jailbroken Kindle Voyage into a desktop information sub-display — automatically generate and push e-ink cards with weather, calendar, to-do items, and daily quotes.
 
@@ -691,6 +705,14 @@ def get_hitokoto():
 
 - [OpenStreetMap Nominatim](https://nominatim.openstreetmap.org/) — Search a place name to get coordinates
 - [Google Maps](https://maps.google.com) — Right-click → coordinates
+
+---
+
+<div align="center">
+
+### 📖 [返回中文版本](#中文) | [Back to Chinese Version](#中文)
+
+</div>
 
 ---
 
