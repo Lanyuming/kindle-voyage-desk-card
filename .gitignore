@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+eggs/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Output (generated images)
+out/
+
+# Config with secrets
+config.local.json
+
+# SSH keys & credentials
+*.pem
+*.pem.pub
+authorized_keys
+*.key
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temp files
+*.bak
+*.tmp
+.push_trigger
+
+# Logs
+*.log
+*.err.log
+
+# Reference / development materials (not needed for release)
+参考/
+agents/

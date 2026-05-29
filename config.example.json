@@ -1,0 +1,46 @@
+{
+  "canvas": {
+    "width": 1072,
+    "height": 1448,
+    "margin": 54
+  },
+  "location": {
+    "name": "通州",
+    "longitude": 116.6563,
+    "latitude": 39.9087
+  },
+  "caiyun": {
+    "token_env": "CAIYUN_TOKEN",
+    "token": "",
+    "timeout_seconds": 8
+  },
+  "apple": {
+    "calendar_days": 3,
+    "max_events": 8,
+    "max_reminders": 7,
+    "icalbuddy_path": "icalBuddy"
+  },
+  "kindle": {
+    "host": "",
+    "user": "root",
+    "port": 22,
+    "remote_path": "/mnt/us/linkss/screensavers/deskcard.png",
+    "ssh_key": "",
+    "ignore_push_errors": true,
+    "post_push_commands": [],
+    "scp_extra_args": [
+      "-o",
+      "ConnectTimeout=8",
+      "-o",
+      "BatchMode=yes"
+    ]
+  },
+  "output": {
+    "png": "out/deskcard.png",
+    "log": "out/kindle-card.log"
+  },
+  "fonts": {
+    "regular": "",
+    "bold": ""
+  }
+}
