@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -u
 
-HOST="${1:-192.168.5.116}"
+HOST="${1:-}"
 PORT="${2:-22}"
-EXPECTED_MAC="${3:-74:c2:46:ec:5d:c7}"
+EXPECTED_MAC="${3:-}"
 
 echo "== Kindle network check =="
 echo "Host: ${HOST}"

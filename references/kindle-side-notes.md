@@ -16,8 +16,8 @@ The Kindle should remain a normal reader. The macOS machine only replaces a scre
 From macOS:
 
 ```bash
-ssh-copy-id root@192.168.5.116
-ssh root@192.168.5.116 'mkdir -p /mnt/us/linkss/screensavers'
+ssh-copy-id root@<KINDLE_IP>
+ssh root@<KINDLE_IP> 'mkdir -p /mnt/us/linkss/screensavers'
 ```
 
 If `ssh-copy-id` is unavailable, manually append your macOS public key to the Kindle SSH `authorized_keys` file according to your installed SSH package/dropbear setup.
@@ -42,7 +42,7 @@ This workflow does not replace the native reader and does not need a resident Ki
 ## Troubleshooting
 
 - If the image does not change, verify the plugin watches the exact directory and filename.
-- If scp fails, test `ssh root@192.168.5.116` from macOS first.
+- If scp fails, test `ssh root@<KINDLE_IP>` from macOS first.
 - If the card is distorted, use `1072x1448` for Kindle Voyage instead of `758x1024`.
 - If Chinese text renders as boxes, set `fonts.regular` and `fonts.bold` in config to a CJK font on macOS.
 
@@ -53,13 +53,13 @@ The Mac can be on 5 GHz Wi-Fi and the Kindle can be on 2.4 GHz Wi-Fi as long as 
 Run from the project directory:
 
 ```bash
-scripts/check_kindle.sh 192.168.5.116 22 74:c2:46:ec:5d:c7
+scripts/check_kindle.sh <KINDLE_IP> 22 <MAC_ADDRESS>
 ```
 
 Current observed pattern for this Kindle:
 
 ```text
-ARP sees 192.168.5.116 at 74:c2:46:ec:5d:c7
+ARP sees <KINDLE_IP> at <MAC_ADDRESS>
 ping receives no replies
 TCP 22 times out
 ```
@@ -84,28 +84,28 @@ Hold power button for 20 seconds. Wait for the tree loading screen, then the hom
 
 ### Step 2: Connect WiFi
 
-After reboot, manually connect WiFi in Settings. The IP is bound to MAC on the router (192.168.5.116).
+After reboot, manually connect WiFi in Settings. The IP is bound to MAC on the router (`<KINDLE_IP>`).
 
 ### Step 3: Verify SSH
 
 ```bash
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     -o ConnectTimeout=10 -o BatchMode=yes \
-    -i KindleAutomationKey.pem root@192.168.5.116 "echo OK"
+    -i <SSH_KEY>.pem root@<KINDLE_IP> "echo OK"
 ```
 
-If SSH times out but the Kindle shows WiFi connected, the keep-wifi service may be interfering. Try FileBrowser at `http://192.168.5.116` as a fallback.
+If SSH times out but the Kindle shows WiFi connected, the keep-wifi service may be interfering. Try FileBrowser at `http://<KINDLE_IP>` as a fallback.
 
 ### Step 4: Stop the offending service
 
 ```bash
-ssh ... root@192.168.5.116 "initctl stop keep-wifi"
+ssh ... root@<KINDLE_IP> "initctl stop keep-wifi"
 ```
 
 Then verify the powerd state is stable:
 
 ```bash
-ssh ... root@192.168.5.116 "for i in 1 2 3 4 5; do lipc-get-prop com.lab126.powerd state; sleep 2; done"
+ssh ... root@<KINDLE_IP> "for i in 1 2 3 4 5; do lipc-get-prop com.lab126.powerd state; sleep 2; done"
 ```
 
 If the state stays constant (either `active` or `screenSaver`), the service was the cause.
@@ -155,10 +155,10 @@ end script
 
 ```bash
 # Copy to Kindle
-scp -i KindleAutomationKey.pem keep-wifi.conf root@192.168.5.116:/mnt/us/linkss/keep-wifi.conf
+scp -i <SSH_KEY>.pem keep-wifi.conf root@<KINDLE_IP>:/mnt/us/linkss/keep-wifi.conf
 
 # Apply on Kindle
-ssh ... root@192.168.5.116 "
+ssh ... root@<KINDLE_IP> "
     initctl stop keep-wifi
     mount -o rw,remount /
     cp /mnt/us/linkss/keep-wifi.conf /etc/upstart/keep-wifi.conf
@@ -270,7 +270,7 @@ cat /var/log/messages | grep -i segfault | tail -5
 /mnt/us/linkss/bin/linkss
 
 # Full refresh sequence: update image + refresh + trigger screensaver
-scp bg_ss00.png root@192.168.5.116:/mnt/us/linkss/screensavers/bg_ss00.png
+scp bg_ss00.png root@<KINDLE_IP>:/mnt/us/linkss/screensavers/bg_ss00.png
 ssh ... "/mnt/us/linkss/bin/linkss; lipc-set-prop com.lab126.powerd powerButton 1"
 ```
 
@@ -295,19 +295,19 @@ ifconfig wlan0 | grep 'inet addr'
 When SSH is unavailable but the Kindle has WiFi and FileBrowser running, you can use the FileBrowser HTTP API:
 
 ```bash
-# Login
-TOKEN=$(curl -s -X POST "http://192.168.5.116/api/login" \
+# Login (replace username/password with your FileBrowser credentials)
+TOKEN=$(curl -s -X POST "http://<KINDLE_IP>/api/login" \
     -H "Content-Type: application/json" \
-    -d '{"username":"admin","password":"admin"}')
+    -d '{"username":"<FB_USER>","password":"<FB_PASS>"}')
 
 # Upload a file
-curl -X PUT "http://192.168.5.116/api/resources/linkss/keep-wifi.conf" \
+curl -X PUT "http://<KINDLE_IP>/api/resources/linkss/keep-wifi.conf" \
     -H "Content-Type: text/plain" \
     -H "X-Auth: $TOKEN" \
     --data-binary @keep-wifi.conf
 
 # List directory
-curl -s "http://192.168.5.116/api/resources/linkss/" \
+curl -s "http://<KINDLE_IP>/api/resources/linkss/" \
     -H "X-Auth: $TOKEN" | python3 -m json.tool
 ```
 
@@ -327,5 +327,4 @@ After all fixes, a healthy Kindle desk-card setup should show:
 | `ls /mnt/us/linkss/screensavers/` | Contains `bg_ss00.png` |
 | `cat /proc/meminfo \| head -1` | MemTotal ~514724 kB, MemFree > 50000 kB |
 | `ps -ef \| grep cvm` | CVM process running |
-| `ifconfig wlan0 \| grep inet` | 192.168.5.116 |
-
+| `ifconfig wlan0 \| grep inet` | `<KINDLE_IP>` |

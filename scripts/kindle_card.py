@@ -796,7 +796,7 @@ def _deploy_kual_fix(fb_base, token, fb_timeout):
 
     usbnet_config = (
         '#!/bin/sh\n'
-        'KINDLE_IP=192.168.15.244\n'
+        'KINDLE_IP=YOUR_KINDLE_IP\n'
         'USE_WIFI="true"\n'
         'USE_WIFI_SSHD_ONLY="true"\n'
         'USE_OPENSSH="false"\n'
@@ -856,7 +856,7 @@ def _deploy_kual_fix(fb_base, token, fb_timeout):
 def _ensure_keepwifi(k, fb_base=None, fb_token=None, fb_timeout=10):
     """确保 keep-wifi 服务在 Kindle 上运行，未运行则自动部署"""
     ssh_key = k.get("ssh_key", "")
-    host = k.get("host", "192.168.5.116")
+    host = k.get("host", "")
     user = k.get("user", "root")
     port = k.get("port", 22)
     scp_extra = k.get("scp_extra_args", [])
@@ -972,7 +972,7 @@ def upload():
                     break
                 elif resp.status_code == 403 and not token and attempt == 0:
                     print("  Got 403, trying auth with default credentials...")
-                    token = _fb_get_token(fb_base, {"username": "admin", "password": "admin"}, fb_timeout)
+                    token = _fb_get_token(fb_base, {"username": "", "password": ""}, fb_timeout)
                     if token:
                         continue
                 else:
@@ -990,7 +990,7 @@ def upload():
         print("HTTP push/refresh incomplete, falling back to SSH...")
 
     ssh_key = k.get("ssh_key", "")
-    host = k.get("host", "192.168.5.116")
+    host = k.get("host", "")
     user = k.get("user", "root")
     remote_path = k.get("remote_path", "/mnt/us/linkss/screensavers/bg_ss00.png")
     port = k.get("port", 22)
@@ -1046,7 +1046,7 @@ def _try_refresh_screensaver(k, fb_base=None, fb_token=None, fb_timeout=10):
 
 def _try_ssh_refresh(k):
     ssh_key = k.get("ssh_key", "")
-    host = k.get("host", "192.168.5.116")
+    host = k.get("host", "")
     user = k.get("user", "root")
     port = k.get("port", 22)
     scp_extra = k.get("scp_extra_args", [])
@@ -1102,7 +1102,7 @@ def _try_fb_refresh(k, fb_base, token, fb_timeout):
         return False
 
     ssh_key = k.get("ssh_key", "")
-    host = k.get("host", "192.168.5.116")
+    host = k.get("host", "")
     user = k.get("user", "root")
     port = k.get("port", 22)
     scp_extra = k.get("scp_extra_args", [])
@@ -1121,7 +1121,7 @@ def _try_fb_refresh(k, fb_base, token, fb_timeout):
         pass
 
     print("  SSH not available; refresh script uploaded but needs manual execution.")
-    print("  TIP: Wake Kindle, then: ssh root@192.168.5.116 'sh /mnt/us/linkss/refresh_screensaver.sh'")
+    print("  TIP: Wake Kindle, then: ssh root@<KINDLE_IP> 'sh /mnt/us/linkss/refresh_screensaver.sh'")
     return False
 
 

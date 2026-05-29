@@ -9,9 +9,9 @@
 # ======================================================================
 set -euo pipefail
 
-KINDLE_HOST="${1:-192.168.5.116}"
+KINDLE_HOST="${1:-}"
 KINDLE_USER="${2:-root}"
-SSH_KEY="${3:-/Users/test/Desktop/KindleKey}"
+SSH_KEY="${3:-}"
 
 SSH_CMD="ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${KINDLE_USER}@${KINDLE_HOST}"
 
