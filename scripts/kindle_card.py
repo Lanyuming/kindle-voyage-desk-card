@@ -3,10 +3,10 @@
 """Kindle Voyage 桌面副屏卡片生成器
 
 数据源：
-- 彩云天气 API（北京市通州区）
+- 天气 API：彩云天气（中国）/ OpenWeatherMap（国际）
 - Apple Calendar（AppleScript，需授权自动化权限）
 - Apple Reminders（AppleScript，需授权自动化权限）
-- 一言 API（hitokoto.cn）
+- 一言 API（hitokoto.cn）/ Quotable API（国际）
 
 输出：1072x1448 8-bit 灰度 PNG
 """
@@ -34,8 +34,8 @@ CONFIG = {
     "card_radius": 16,
     "safe_margin": 40,
     "caiyun_token": "",
+    "caiyun_token_env": "CAIYUN_TOKEN",
     "location": "",
-    "location_name": "",
     "font_regular": "/System/Library/Fonts/PingFang.ttc",
     "font_bold": "/System/Library/Fonts/PingFang.ttc",
     "font_light": "/System/Library/Fonts/PingFang.ttc",
@@ -54,9 +54,12 @@ CONFIG = {
             "auth": {
                 "username": "",
                 "password": ""
-            }
+            },
+            "bind_address": "",
+            "port": 80
         }
     },
+    "calendar_names": ["日历", "个人"],
     "calendar_days": 3,
     "max_events": 8,
     "max_reminders": 7,
@@ -89,9 +92,6 @@ SKYCON_MAP = {
     "HEAVY_HAZE": ("重度霾", "~~~"),
     "WIND": ("大风", ">"),
 }
-
-# Apple Calendar 中需要查询的日历名称（排除天气订阅）
-CALENDAR_NAMES = ["日历", "个人"]
 
 def generate_suggestion(temp, apparent, skycon, aqi, humidity):
     """根据实际天气数据生成简短、活泼的出行建议"""
@@ -143,12 +143,16 @@ def get_lunar_date():
         return f"{lunar.getMonthInChinese()}月{lunar.getDayInChinese()}"
     except ImportError:
         pass
-    return "五月初八"
+    return ""
 
 
 def get_weather():
     """从彩云天气 API 获取实时天气数据"""
-    url = f"https://api.caiyunapp.com/v2.5/{CONFIG['caiyun_token']}/{CONFIG['location']}/weather.json"
+    token = CONFIG.get("caiyun_token", "")
+    token_env = CONFIG.get("caiyun_token_env", "CAIYUN_TOKEN")
+    if not token and token_env:
+        token = os.environ.get(token_env, "")
+    url = f"https://api.caiyunapp.com/v2.5/{token}/{CONFIG['location']}/weather.json"
     try:
         r = requests.get(url, timeout=10)
         data = r.json()
@@ -181,8 +185,8 @@ def get_weather():
 
 def get_calendar_events():
     """获取 Apple Calendar 近期日程（通过 AppleScript）"""
-    # 构建 AppleScript：查询指定日历中未来 3 天的事件
-    cal_names_js = ", ".join(f'"{c}"' for c in CALENDAR_NAMES)
+    cal_names = CONFIG.get("calendar_names", ["日历", "个人"])
+    cal_names_js = ", ".join(f'"{c}"' for c in cal_names)
     script = f'''
 tell application "Calendar"
     set today to current date
@@ -491,7 +495,7 @@ def render():
     _draw_calendar_icon(draw, cx, y, size=28)
     draw.text((cx + 32, y), f"农历{get_lunar_date()}", font=f_small, fill=LAYOUT["color_black"])
 
-    loc_name = CONFIG.get("location_name", "北京市通州区")
+    loc_name = CONFIG.get("location_name", "")
     loc_w = draw.textlength(loc_name, font=f_small)
     loc_icon_x = M + CW - PAD - loc_w - 32
     _draw_location_icon(draw, loc_icon_x, y, size=28)
@@ -757,8 +761,9 @@ def _deploy_kual_fix(fb_base, token, fb_timeout):
         'fi\n'
         'if ! ps | grep -v grep | grep filebrowser > /dev/null 2>&1; then\n'
         '    if [ -f /mnt/us/extensions/filebrowser/bin/filebrowser ]; then\n'
-        '        cd /mnt/us/extensions/filebrowser/bin/ && ./filebrowser -r /mnt/us -p 80 -a 0.0.0.0 >> $LOG 2>&1 &\n'
-        '        echo "filebrowser started" >> $LOG\n'
+        '        FB_ADDR=$(ifconfig wlan0 2>/dev/null | grep "inet " | awk \'{print $2\'})\n'
+        '        cd /mnt/us/extensions/filebrowser/bin/ && ./filebrowser -r /mnt/us -p 80 -a "${FB_ADDR:-127.0.0.1}" >> $LOG 2>&1 &\n'
+        '        echo "filebrowser started on ${FB_ADDR:-127.0.0.1}:80" >> $LOG\n'
         '    fi\n'
         'fi\n'
         'initctl stop stay-awake 2>/dev/null\n'
@@ -830,7 +835,8 @@ def _deploy_kual_fix(fb_base, token, fb_timeout):
         'initctl start sshd 2>/dev/null\n'
         'if ! ps | grep -v grep | grep filebrowser > /dev/null 2>&1; then\n'
         '    if [ -f /mnt/us/extensions/filebrowser/bin/filebrowser ]; then\n'
-        '        cd /mnt/us/extensions/filebrowser/bin/ && ./filebrowser -r /mnt/us -p 80 -a 0.0.0.0 &\n'
+        '        FB_ADDR=$(ifconfig wlan0 2>/dev/null | grep "inet " | awk \'{print $2\'})\n'
+        '        cd /mnt/us/extensions/filebrowser/bin/ && ./filebrowser -r /mnt/us -p 80 -a "${FB_ADDR:-127.0.0.1}" &\n'
         '    fi\n'
         'fi\n'
         'echo \'{"command": "sh /mnt/us/linkss/autostart.sh"}\' > /mnt/us/linkss/execute\n'
@@ -1128,7 +1134,7 @@ def _try_fb_refresh(k, fb_base, token, fb_timeout):
 def get_data_hash(data_dict):
     """计算数据哈希值，用于检测变化"""
     raw = json.dumps(data_dict, sort_keys=True, ensure_ascii=False)
-    return hashlib.md5(raw.encode()).hexdigest()
+    return hashlib.sha256(raw.encode()).hexdigest()
 
 
 def check_and_push(data_dict, force=False):
@@ -1178,6 +1184,7 @@ if __name__ == "__main__":
             CONFIG["margin"] = ext_cfg["canvas"].get("margin", CONFIG["margin"])
         if "caiyun" in ext_cfg:
             CONFIG["caiyun_token"] = ext_cfg["caiyun"].get("token", CONFIG["caiyun_token"])
+            CONFIG["caiyun_token_env"] = ext_cfg["caiyun"].get("token_env", CONFIG.get("caiyun_token_env", "CAIYUN_TOKEN"))
         if "location" in ext_cfg:
             loc = ext_cfg["location"]
             CONFIG["location"] = f"{loc.get('longitude', 116.65)},{loc.get('latitude', 39.92)}"
@@ -1195,6 +1202,8 @@ if __name__ == "__main__":
             CONFIG["calendar_days"] = ext_cfg["apple"].get("calendar_days", 3)
             CONFIG["max_events"] = ext_cfg["apple"].get("max_events", 8)
             CONFIG["max_reminders"] = ext_cfg["apple"].get("max_reminders", 7)
+            if "calendar_names" in ext_cfg["apple"]:
+                CONFIG["calendar_names"] = ext_cfg["apple"]["calendar_names"]
         print(f"Config loaded from {config_path}")
     force = "--force" in filtered_args
     if "--push" in filtered_args:

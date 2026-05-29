@@ -13,7 +13,7 @@ KINDLE_HOST="${1:-}"
 KINDLE_USER="${2:-root}"
 SSH_KEY="${3:-}"
 
-SSH_CMD="ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${KINDLE_USER}@${KINDLE_HOST}"
+SSH_CMD="ssh -i ${SSH_KEY} -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 ${KINDLE_USER}@${KINDLE_HOST}"
 
 echo "================================================================"
 echo "  Kindle SSH 持久化配置"

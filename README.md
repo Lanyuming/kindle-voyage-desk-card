@@ -131,8 +131,8 @@ cp config.example.json config.local.json
   },
   "location": {
     "name": "你的城市",
-    "longitude": 116.6563,
-    "latitude": 39.9087
+    "longitude": 0,
+    "latitude": 0
   },
   "caiyun": {
     "token_env": "CAIYUN_TOKEN",
@@ -287,6 +287,66 @@ ssh root@<KINDLE_IP> 'lipc-set-prop com.lab126.powerd powerButton 1'
 | 待办 | Apple Reminders（本地 AppleScript） | ❌ 本地读取 |
 | 一言 | [hitokoto.cn](https://hitokoto.cn/) | ❌ 无需申请 |
 
+### 国际用户适配（International Users）
+
+> 本项目默认使用国内服务（彩云天气、一言）。海外用户可参考以下方案替换数据源，需自行修改 `scripts/kindle_card.py` 中的对应函数。
+
+**天气 API 替换：OpenWeatherMap**
+
+[OpenWeatherMap](https://openweathermap.org/api) 提供免费天气数据（免费层 1000 次/天），全球覆盖。
+
+```bash
+# 1. 注册获取 API Key（免费）
+# https://home.openweathermap.org/api_keys
+
+# 2. 在 config.local.json 中配置
+export OWM_API_KEY="your_openweathermap_api_key"
+```
+
+修改 `kindle_card.py` 的 `get_weather()` 函数示例：
+
+```python
+def get_weather():
+    """从 OpenWeatherMap 获取天气"""
+    import os
+    token = os.environ.get("OWM_API_KEY", "")
+    loc = CONFIG["location"]  # 格式: "longitude,latitude"
+    lon, lat = loc.split(",")
+    url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&units=metric&appid={token}"
+    r = requests.get(url, timeout=10)
+    data = r.json()
+    return {
+        "temp": int(data["main"]["temp"]),
+        "desc": data["weather"][0]["main"],
+        "icon": "*",
+        "humidity": f"{data['main']['humidity']}%",
+        "wind": f"{data['wind']['speed']:.0f}km/h",
+        "aqi": None,
+        "apparent": int(data["main"]["feels_like"]),
+        "suggestion": "Check the weather outside!"
+    }
+```
+
+**金句 API 替换：Quotable**
+
+[Quotable API](https://github.com/lukePeavey/quotable) 提供免费英文名言接口，无需 API Key。
+
+```python
+def get_hitokoto():
+    """从 Quotable 获取随机英文句子"""
+    try:
+        r = requests.get("https://api.quotable.io/random", timeout=5)
+        data = r.json()
+        return {"content": data.get("content", ""), "source": data.get("author", "")}
+    except Exception:
+        return {"content": "The only way to do great work is to love what you do.", "source": "Steve Jobs"}
+```
+
+**坐标查询工具**
+
+- [OpenStreetMap Nominatim](https://nominatim.openstreetmap.org/) — 输入地名获取经纬度
+- [Google Maps](https://maps.google.com) — 右键地点 → 坐标
+
 ---
 
 ## English
@@ -416,8 +476,8 @@ Edit `config.local.json`:
   },
   "location": {
     "name": "Your City",
-    "longitude": 116.6563,
-    "latitude": 39.9087
+    "longitude": 0,
+    "latitude": 0
   },
   "caiyun": {
     "token_env": "CAIYUN_TOKEN",
@@ -571,6 +631,66 @@ See [references/kindle-side-notes.md](references/kindle-side-notes.md) for more 
 | Calendar | Apple Calendar (local AppleScript) | ❌ Local read |
 | To-dos | Apple Reminders (local AppleScript) | ❌ Local read |
 | Quote | [hitokoto.cn](https://hitokoto.cn/) | ❌ No key needed |
+
+### For International Users
+
+> This project defaults to Chinese services (Caiyun Weather, hitokoto). Users outside China can adapt it using the alternatives below by modifying `scripts/kindle_card.py`.
+
+**Weather: OpenWeatherMap**
+
+[OpenWeatherMap](https://openweathermap.org/api) offers free weather data (1000 calls/day on free tier), with global coverage.
+
+```bash
+# 1. Get a free API key
+# https://home.openweathermap.org/api_keys
+
+# 2. Set as environment variable
+export OWM_API_KEY="your_openweathermap_api_key"
+```
+
+Replace `get_weather()` in `kindle_card.py`:
+
+```python
+def get_weather():
+    """Fetch weather from OpenWeatherMap"""
+    import os
+    token = os.environ.get("OWM_API_KEY", "")
+    loc = CONFIG["location"]  # format: "longitude,latitude"
+    lon, lat = loc.split(",")
+    url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&units=metric&appid={token}"
+    r = requests.get(url, timeout=10)
+    data = r.json()
+    return {
+        "temp": int(data["main"]["temp"]),
+        "desc": data["weather"][0]["main"],
+        "icon": "*",
+        "humidity": f"{data['main']['humidity']}%",
+        "wind": f"{data['wind']['speed']:.0f}km/h",
+        "aqi": None,
+        "apparent": int(data["main"]["feels_like"]),
+        "suggestion": "Check the weather outside!"
+    }
+```
+
+**Quote: Quotable API**
+
+[Quotable](https://github.com/lukePeavey/quotable) provides free random quotes, no API key required.
+
+```python
+def get_hitokoto():
+    """Fetch a random quote from Quotable"""
+    try:
+        r = requests.get("https://api.quotable.io/random", timeout=5)
+        data = r.json()
+        return {"content": data.get("content", ""), "source": data.get("author", "")}
+    except Exception:
+        return {"content": "The only way to do great work is to love what you do.", "source": "Steve Jobs"}
+```
+
+**Coordinate Lookup Tools**
+
+- [OpenStreetMap Nominatim](https://nominatim.openstreetmap.org/) — Search a place name to get coordinates
+- [Google Maps](https://maps.google.com) — Right-click → coordinates
 
 ---
 
